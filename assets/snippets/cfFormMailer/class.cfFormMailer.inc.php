@@ -900,7 +900,7 @@ function convertjp($text)
    * @param  string $join 値が配列の場合に連結に使用する文字列
    * @return string プレースホルダが置換された文字列
    */
-  function replacePlaceHolder($text, $params, $join = '<br />') {
+  function replacePlaceHolder($text, $params, $join = '<br>') {
     global $modx;
     
     if (!is_array($params) || !$text) return false;
@@ -926,7 +926,7 @@ function convertjp($text)
       {
           if($val==='&nbsp;') $val = '';
           $val = $modx->filter->phxFilter($m[1],$val,$modifiers);
-          if($val==='') $val = '&nbsp;';
+          //if($val==='') $val = '&nbsp;'; //必要性がよくわからない。
       }
       $rep = "";
       
