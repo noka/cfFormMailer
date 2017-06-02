@@ -1438,7 +1438,7 @@ function convertjp($text)
    * @access private
    */
   function ifTableExists() {
-    $sql = "SHOW TABLES FROM " . $this->modx->db->config['dbase'] . " LIKE '%" . STORE_DB_NAME . "%'";
+    $sql = "SHOW TABLES FROM `" . $this->modx->db->config['dbase'] . "` LIKE '%" . STORE_DB_NAME . "%'";
     if ($rs = $this->modx->db->query($sql)) {
       if ($this->modx->db->getRecordCount($rs) == 2) {
         return true;
