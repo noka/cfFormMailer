@@ -2,9 +2,9 @@
 /**
  * cfFormMailer
  * 
- * @author  Clefarray Factory
+ * @author  Clefarray Factory 
  * @link  http://www.clefarray-web.net/
- * @version 1.3
+ * @version 1.3 customized
  *
  * Documentation: http://www.clefarray-web.net/blog/manual/cfFormMailer_manual.html
  * LICENSE: GNU General Public License (GPL) (http://www.gnu.org/copyleft/gpl.html)
@@ -61,7 +61,7 @@ class Class_cfFormMailer {
    * コンストラクタ
    *
    */
-  function Class_cfFormMailer(&$modx) {
+  function __construct($modx) {
     if (!$modx) {
       return false;
     }
@@ -98,6 +98,8 @@ class Class_cfFormMailer {
         $html = $this->loadTemplate(TMPL_INPUT);
         break;
       case "conf":
+        //--誤送信対策 仮
+        if(isset($_SESSION['_cffm_recently_send'])) $_SESSION['_cffm_recently_send']=array();
         $html = $this->loadTemplate(TMPL_CONF);
         break;
       case "comp":
@@ -438,20 +440,46 @@ class Class_cfFormMailer {
         $admin_addresses[] = $buf;
       }
     }
+
+    //初期値
+    $subject = array(
+      'admin' =>(ADMIN_SUBJECT) ? ADMIN_SUBJECT : "サイトから送信されたメール",
+      'user'  =>(REPLY_SUBJECT) ? REPLY_SUBJECT : "自動返信メール"
+    );
+
+    $to = array(
+      'admin' =>$admin_addresses,
+      'user'  =>$this->getAutoReplyAddress()
+    );
+
+    $toName = array(
+      'admin' =>'',
+      'user' =>''
+    );
+
+    $from = array(
+      'admin' =>defined('REPLY_FROM') && REPLY_FROM ? REPLY_FROM : $admin_addresses[0],
+      'user'  =>defined('REPLY_FROM') && REPLY_FROM ? REPLY_FROM : $admin_addresses[0]
+    );
+
+    $fromName = array(
+      'admin' =>(defined('ADMIN_NAME') && ADMIN_NAME) ? ADMIN_NAME : '',
+      'user'  =>(defined('REPLY_FROMNAME') && REPLY_FROMNAME) ? REPLY_FROMNAME : ''
+    );
+    
     
     // 本文の準備
     $additional = array(
       'senddate'    => date("Y-m-d H:i:s"),
-      'adminmail'   => $admin_addresses[0],
+      'adminmail'   => $from['admin'],
       // Added in v0.0.6
       'sender_ip'   => $_SERVER['REMOTE_ADDR'],
       'sender_host' => gethostbyaddr($_SERVER['REMOTE_ADDR']),
       'sender_ua'   => $this->encodeHTML($_SERVER['HTTP_USER_AGENT']),
       // Added in v0.0.7
-      'reply_to'    => $this->getAutoReplyAddress(),
+      'reply_to'    => $to['user'],
     );
     
-    $reply_to = $this->getAutoReplyAddress();
 
     $join = ALLOW_HTML ? '<br />' : "\n";
 
@@ -469,7 +497,7 @@ class Class_cfFormMailer {
     $tmpl = $this->clearPlaceHolder($tmpl);
     
     // 自動返信メールの本文生成
-    if (AUTO_REPLY && $reply_to) {
+    if (AUTO_REPLY && $to['user']) {
       // モバイル用のテンプレート切り替え
       if (defined('TMPL_MAIL_REPLY_MOBILE') && TMPL_MAIL_REPLY_MOBILE && preg_match("/(docomo\.ne\.jp|ezweb\.ne\.jp|softbank\.ne\.jp|vodafone\.ne\.jp|disney\.ne\.jp|pdx\.ne\.jp|willcom\.com|emnet\.ne\.jp)$/", $reply_to)) {
         $template_filename = TMPL_MAIL_REPLY_MOBILE;
@@ -491,9 +519,12 @@ class Class_cfFormMailer {
     
     // 管理者宛送信
     $this->modx->loadExtension("MODxMailer");
-    $pm = &$this->modx->mail;
-    foreach ($admin_addresses as $v) {
-        $pm->AddAddress($v);
+    $pm = $this->modx->mail;
+    $pm->CharSet = $mailCharset;
+    $pm->Encoding = 'base64';
+
+    foreach ($to['admin'] as $v) {
+        $pm->AddAddress($v,$toName['admin']);
     }
     if (defined('ADMIN_MAIL_CC') && ADMIN_MAIL_CC) {
       foreach (explode(",", ADMIN_MAIL_CC) as $v) {
@@ -511,18 +542,12 @@ class Class_cfFormMailer {
         }
       }
     }
-    $subject = (ADMIN_SUBJECT) ? ADMIN_SUBJECT : "サイトから送信されたメール";
-    $pm->Subject = $subject;
-    if (defined('ADMIN_NAME') && ADMIN_NAME) {
-        $pm->FromName = $this->modx->parseText(ADMIN_NAME,$this->form);
-    } else {
-      $pm->FromName = '';
-    }
-    //$pm->From = ($reply_to ? $reply_to : ADMIN_MAIL);
-    $pm->From = defined('REPLY_FROM') && REPLY_FROM ? REPLY_FROM : ADMIN_MAIL;  // #通知メールの差出人は自動返信と同様をデフォルトに。
-    $pm->Sender = $pm->From;
+    
+    $pm->setFrom($from['admin'],$fromName['admin']);
+    $pm->Subject = $subject['admin'];
+    $pm->Sender = $from['admin'];
     $pm->Body = mb_convert_encoding($tmpl, $mailCharset, CHARSET);
-    $pm->Encoding = '7bit';
+
     // ユーザーからのファイル送信
     if (isset($_SESSION['_cf_uploaded']) && count($_SESSION['_cf_uploaded'])) {
       $upload_flag = true;
@@ -541,24 +566,19 @@ class Class_cfFormMailer {
       $this->modx->logEvent(1, 3,$errormsg.$vars);
       return false;
     } else {
-        if(isset($_SESSION['_cf_autosave'])) unset($_SESSION['_cf_autosave']);
+      if(isset($_SESSION['_cf_autosave'])) unset($_SESSION['_cf_autosave']);
     }
 
     // 自動返信
-    if (AUTO_REPLY && $reply_to) {
-      $this->modx->loadExtension("MODxMailer");
-      $pm = &$this->modx->mail;
-      $reply_from = defined('REPLY_FROM') && REPLY_FROM ? REPLY_FROM : $admin_addresses[0];
-      $this->modx->loadExtension("MODxMailer");
-      $pm = &$this->modx->mail;
-      $pm->AddAddress($reply_to);
-      $subject = (REPLY_SUBJECT) ? REPLY_SUBJECT : "自動返信メール";
-      $pm->Subject = $subject;
-      $pm->FromName = REPLY_FROMNAME;
-      $pm->From = $reply_from;
-      $pm->Sender = $reply_from;
+    if (AUTO_REPLY && $to['user']) {
+      $pm->clearAddresses();
+
+      $pm->AddAddress($to['user']);
+      $pm->Subject = $subject['user'];
+      $pm->setFrom($from['user'], $fromName['user']);
+      $pm->Sender = $from['user'];
       $pm->Body = mb_convert_encoding($tmpl_u, $mailCharset, CHARSET);
-      $pm->Encoding = '7bit';
+
       // 添付ファイル処理
       if (defined('ATTACH_FILE') && ATTACH_FILE && @file_exists(ATTACH_FILE)) {
         if (defined('ATTACH_FILE_NAME') && ATTACH_FILE_NAME) {
@@ -638,7 +658,10 @@ class Class_cfFormMailer {
    * @return boolean 結果
    */
   function isMultiple() {
-    return ($this->form === $_SESSION['_cffm_recently_send']);
+    if($this->form === $_SESSION['_cffm_recently_send'])
+      return true;
+    else
+      return false;
   }
 
   /**
@@ -1360,6 +1383,9 @@ function convertjp($text)
     if (empty($param_list['reply_ishtml'])) $param_list['reply_ishtml'] = 0;
     if (empty($param_list['allow_html']))   $param_list['allow_html']   = 0;
 
+    // cfformdb
+    if (empty($param_list['store_db_name']))   $param_list['store_db_bname']   = 'cfformdb';
+
     // 定数として設定
     foreach ($param_list as $key => $value) {
       define(strtoupper($key), $value);
@@ -1380,7 +1406,8 @@ function convertjp($text)
     }
 
     if ($this->ifTableExists()) {
-      $sql = "INSERT INTO " . $this->modx->getFullTableName('cfformdb') . '(created) VALUES(NOW())';
+      
+      $sql = "INSERT INTO " . $this->modx->getFullTableName(STORE_DB_NAME) . '(created) VALUES(NOW())';
       $this->modx->db->query($sql);
       $newID = $this->modx->db->getInsertId();
       $rank = 0;
@@ -1392,7 +1419,7 @@ function convertjp($text)
           $val = implode(",", $val);
         }
         $sql = sprintf("INSERT INTO %s(postid,field,value,rank) VALUES(%d, '%s', '%s', %d)",
-          $this->modx->getFullTableName('cfformdb_detail'),
+          $this->modx->getFullTableName(STORE_DB_NAME.'_detail'),
           $newID,
           $this->modx->db->escape($key),
           $this->modx->db->escape($val),
@@ -1411,7 +1438,7 @@ function convertjp($text)
    * @access private
    */
   function ifTableExists() {
-    $sql = "SHOW TABLES FROM " . $this->modx->db->config['dbase'] . " LIKE '%cfformdb%'";
+    $sql = "SHOW TABLES FROM " . $this->modx->db->config['dbase'] . " LIKE '%" . STORE_DB_NAME . "%'";
     if ($rs = $this->modx->db->query($sql)) {
       if ($this->modx->db->getRecordCount($rs) == 2) {
         return true;
@@ -1521,7 +1548,7 @@ function convertjp($text)
   }
   
   /**
-   * tel : 郵便番号
+   * zip : 郵便番号
    *   Added in v1.3.x
    */
   function _def_zip($value, $param, $field) {
