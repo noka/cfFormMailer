@@ -947,7 +947,7 @@ function convertjp($text)
       if($toFilter && $modifiers!==false)
       {
           if($val==='&nbsp;') $val = '';
-          $val = $modx->filter->phxFilter($m[1],$val,$modifiers);
+		  if(!is_array($val)) $val = $modx->filter->phxFilter($m[1],$val,$modifiers);
           //if($val==='') $val = '&nbsp;'; //必要性がよくわからない。
       }
       $rep = "";
