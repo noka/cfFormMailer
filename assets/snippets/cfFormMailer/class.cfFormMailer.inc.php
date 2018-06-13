@@ -1384,7 +1384,7 @@ function convertjp($text)
     if (empty($param_list['allow_html']))   $param_list['allow_html']   = 0;
 
     // cfformdb
-    if (empty($param_list['store_db_name']))   $param_list['store_db_bname']   = 'cfformdb';
+    if (empty($param_list['store_db_name']))   $param_list['store_db_name']   = 'cfformdb';
 
     // 定数として設定
     foreach ($param_list as $key => $value) {
