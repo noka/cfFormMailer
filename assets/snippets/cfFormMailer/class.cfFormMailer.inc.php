@@ -466,7 +466,7 @@ class Class_cfFormMailer {
         }
         // 送信メールの文字コード
         if ($this->cfg['mail_charset']) {
-            $mailCharset = MAIL_CHARSET;
+            $mailCharset = $this->cfg['mail_charset'];
         } else {
             $mailCharset = 'iso-2022-jp';
         }
