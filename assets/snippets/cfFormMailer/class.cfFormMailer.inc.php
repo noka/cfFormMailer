@@ -996,7 +996,7 @@ class Class_cfFormMailer {
             $toFilter = false;
         }
 
-        if($toFilter) evo()->loadExtension('PHx') or die('Could not load PHx class.');
+        if($toFilter) evo()->loadExtension('MODIFIERS') or die('Could not load PHx class.');
 
         // 基本プレースホルダ
         $replaceKeys = array_keys($params);
