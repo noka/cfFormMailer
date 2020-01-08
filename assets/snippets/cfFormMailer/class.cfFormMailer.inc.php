@@ -595,8 +595,8 @@ class Class_cfFormMailer {
 
         // 自動返信
         if ($this->cfg['auto_reply'] && $reply_to) {
-            evo()->loadExtension('MODxMailer');
-            $pm = &evo()->mail;
+            $pm->clearAddresses();
+
             $pm->AddAddress($reply_to);
             $subject = $this->cfg['reply_subject'] ?: '自動返信メール';
             $pm->Subject = $subject;
