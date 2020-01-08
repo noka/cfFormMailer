@@ -600,9 +600,9 @@ class Class_cfFormMailer {
             $pm->AddAddress($reply_to);
             $subject = $this->cfg['reply_subject'] ?: '自動返信メール';
             $pm->Subject = $subject;
+            $replyfrom = !getConfig('reply_from') ? $admin_addresses[0] : getConfig('reply_from');
             $pm->setFrom(
-                $this->getConfig('reply_from', $admin_addresses[0])
-                , $this->getConfig('reply_fromname')
+                $replyfrom , $this->getConfig('reply_fromname')
             );
             $pm->Sender = $pm->From;
             $pm->Body = mb_convert_encoding($tmpl_u, $mailCharset, $this->cfg['charset']);
