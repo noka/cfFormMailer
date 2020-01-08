@@ -600,7 +600,7 @@ class Class_cfFormMailer {
             $pm->AddAddress($reply_to);
             $subject = $this->cfg['reply_subject'] ?: '自動返信メール';
             $pm->Subject = $subject;
-            $replyfrom = !getConfig('reply_from') ? $admin_addresses[0] : getConfig('reply_from');
+            $replyfrom = !$this->getConfig('reply_from') ? $admin_addresses[0] : $this->getConfig('reply_from');
             $pm->setFrom(
                 $replyfrom , $this->getConfig('reply_fromname')
             );
