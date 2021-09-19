@@ -602,8 +602,7 @@ class Class_cfFormMailer {
             $pm->Subject = $subject;
             $replyfrom = !$this->getConfig('reply_from') ? $admin_addresses[0] : $this->getConfig('reply_from');
             $pm->setFrom(
-                $replyfrom
-                , $this->getConfig('reply_fromname')
+                $replyfrom , $this->getConfig('reply_fromname')
             );
             $pm->Sender = $pm->From;
             $pm->Body = mb_convert_encoding($tmpl_u, $mailCharset, $this->cfg['charset']);
