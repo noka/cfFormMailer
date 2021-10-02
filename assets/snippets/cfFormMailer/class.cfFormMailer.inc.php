@@ -539,6 +539,13 @@ class Class_cfFormMailer {
         // 管理者宛送信
         evo()->loadExtension('MODxMailer');
         $pm = &evo()->mail;
+        
+        if($this->cfg['reply_ishtml']){
+            $pm->isHTML(true);
+        }else{
+            $pm->isHTML(false);
+        }
+
         foreach ($admin_addresses as $v) {
             $pm->AddAddress($v);
         }
