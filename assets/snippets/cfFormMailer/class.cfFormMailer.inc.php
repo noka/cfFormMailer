@@ -583,7 +583,7 @@ class Class_cfFormMailer {
         if (!$pm->Send()) {
             $errormsg = 'メール送信に失敗しました::' . $pm->ErrorInfo;
             $this->setError($errormsg);
-            $vars = var_export($pm,true);
+            $vars = print_r($pm,true);
             $vars = nl2br(evo()->htmlspecialchars($vars));
             evo()->logEvent(1, 3,$errormsg.$vars);
             return false;
@@ -996,7 +996,17 @@ class Class_cfFormMailer {
             $toFilter = false;
         }
 
-        if($toFilter) evo()->loadExtension('MODIFIERS') or die('Could not load PHx class.');
+        if($toFilter) {
+
+            if(file_exists(EVO_CORE_PATH . 'src/Legacy/Modifiers.php')){
+                //for ver 3.*
+                include_once EVO_CORE_PATH . 'src/Legacy/Modifiers.php';
+            }else{
+                //for ver 1.4.*
+                evo()->loadExtension('MODIFIERS') or die('Could not load PHx class.');            
+            }
+
+        }
 
         // 基本プレースホルダ
         $replaceKeys = array_keys($params);
