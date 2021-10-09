@@ -1005,7 +1005,7 @@ class Class_cfFormMailer {
 
         if($toFilter) {
 
-            if(file_exists(EVO_CORE_PATH . 'src/Legacy/Modifiers.php')){
+            if(defined('EVO_CORE_PATH') && file_exists(EVO_CORE_PATH . 'src/Legacy/Modifiers.php')){
                 //for ver 3.*
                 include_once EVO_CORE_PATH . 'src/Legacy/Modifiers.php';
             }else{
