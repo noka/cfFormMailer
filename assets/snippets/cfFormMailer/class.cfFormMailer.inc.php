@@ -489,6 +489,7 @@ class Class_cfFormMailer {
         }
 
         // 本文の準備
+        date_default_timezone_set('Asia/Tokyo');
         $additional = array(
             'senddate'    => date('Y-m-d H:i:s'),
             'adminmail'   => $admin_addresses[0],
@@ -539,13 +540,12 @@ class Class_cfFormMailer {
         // 管理者宛送信
         evo()->loadExtension('MODxMailer');
         $pm = &evo()->mail;
-        
+
         if($this->cfg['reply_ishtml']){
             $pm->isHTML(true);
         }else{
             $pm->isHTML(false);
         }
-
         foreach ($admin_addresses as $v) {
             $pm->AddAddress($v);
         }
@@ -1004,7 +1004,6 @@ class Class_cfFormMailer {
         }
 
         if($toFilter) {
-
             if(defined('EVO_CORE_PATH') && file_exists(EVO_CORE_PATH . 'src/Legacy/Modifiers.php')){
                 //for ver 3.*
                 include_once EVO_CORE_PATH . 'src/Legacy/Modifiers.php';
@@ -1012,7 +1011,6 @@ class Class_cfFormMailer {
                 //for ver 1.4.*
                 evo()->loadExtension('MODIFIERS') or die('Could not load PHx class.');            
             }
-
         }
 
         // 基本プレースホルダ
@@ -1159,9 +1157,6 @@ class Class_cfFormMailer {
             if (is_array($v)) {
                 $v = $this->getFormVariables($v);
             } else {
-                if (get_magic_quotes_gpc()) {
-                    $v = stripslashes($v);
-                }
                 $v = str_replace("\0", '', $v);
                 $v = strtr($v, array("\r\n" => "\n", "\r" => "\n"));
                 $v = preg_replace("/\n+$/m", "\n", $v);
@@ -2069,8 +2064,54 @@ class Class_cfFormMailer {
         if (is_array($text)) {
             return array_map($this->_f_dateformat, $text, $param);
         }
-
-        return strftime($param, strtotime($text));
+        // use date?
+        if(strpos($param,'%') !== false){
+            $_str_to_date = [
+                '%A' => 'l',
+                '%B' => 'F',
+                '%D' => 'm/d/y',
+                '%F' => 'Y-m-d',
+                '%G' => 'o',
+                '%H' => 'H',
+                '%I' => 'h',
+                '%M' => 'i',
+                '%P' => 'a',
+                '%R' => 'H:i',
+                '%S' => 's',
+                '%T' => 'H:i:s',
+                '%V' => 'W',
+                '%W' => 'W',
+                '%X' => 'H:i:s',
+                '%Y' => 'Y',
+                '%Z' => 'e',
+                '%a' => 'D',
+                '%b' => 'M',
+                '%c' => 'c',
+                '%d' => 'd',
+                '%e' => 'j',
+                '%g' => 'y',
+                '%h' => 'M',
+                '%j' => 'z',
+                '%k' => 'G',
+                '%l' => 'g',
+                '%m' => 'm',
+                '%n' => ' ',
+                '%p' => 'A',
+                '%r' => 'h:i:s A',
+                '%s' => 'U',
+                '%t' => ' ',
+                '%u' => 'N',
+                '%v' => ' ',
+                '%w' => 'w',
+                '%x' => 'r',
+                '%y' => 'y',
+                '%z' => 'Z',
+            ];
+            $_strftime_format = array_keys($_str_to_date);
+            $_date_format = array_values($_str_to_date);
+            $param = str_replace($_strftime_format, $_date_format, $param);
+        }
+        return date($param, strtotime($text));
     }
 
     /**
