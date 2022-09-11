@@ -567,8 +567,9 @@ class Class_cfFormMailer {
         }
         $subject = $this->cfg['admin_subject'] ? $this->cfg['admin_subject'] : 'サイトから送信されたメール';
         $pm->Subject = $subject;
+        $replyfrom = !$this->getConfig('reply_from') ? $admin_addresses[0] : $this->getConfig('reply_from');
         $pm->setFrom(
-            $admin_addresses[0]
+            $replyfrom
             , ($this->cfg['admin_name']) ? evo()->parseText($this->cfg['admin_name'],$this->form) : ''
         );
         if ($reply_to) {
