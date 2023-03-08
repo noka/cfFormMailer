@@ -143,8 +143,8 @@ class Class_cfFormMailer {
                 } elseif ($mode === 'return') {
                     $text = $this->restoreForm($text, $this->form);
                     // アップロード済みのファイルを削除
-                    if (is_array($_SESSION['_cf_uploaded']) && count($_SESSION['_cf_uploaded'])) {
-                        foreach ($_SESSION['_cf_uploaded'] as $filedata) {
+                    if (isset($_SESSION['_cf_uploaded']) && is_array($_SESSION['_cf_uploaded']) && count($_SESSION['_cf_uploaded'])) {
+                      foreach ($_SESSION['_cf_uploaded'] as $filedata) {
                             @unlink($filedata['path']);
                         }
                         unset($_SESSION['_cf_uploaded']);
