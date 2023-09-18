@@ -43,9 +43,10 @@ if (is_file(CFM_PATH . 'additionalMethods.inc.php')) {
 /**
  * Action
  */
-if ($_POST['_mode'] === 'conf') {
+$mode = $_POST['_mode'] ?? '';
+if ($mode === 'conf') {
     $pageType = ($mf->validate()) ? 'conf' : 'error';
-} elseif ($_POST['_mode'] === 'send') {
+} elseif ($mode === 'send') {
     if (isset($_POST['return'])) {
         if (!$mf->validate()) {
             return $mf->raiseError('未知のエラーです');
@@ -63,7 +64,7 @@ if ($_POST['_mode'] === 'conf') {
         $pageType = 'error';
     }
 } else {
-    $pageType = 'input';
+  $pageType = 'input';
 }
 
 /**

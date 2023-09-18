@@ -144,7 +144,7 @@ class Class_cfFormMailer {
                     $text = $this->restoreForm($text, $this->form);
                     // アップロード済みのファイルを削除
                     if (isset($_SESSION['_cf_uploaded']) && is_array($_SESSION['_cf_uploaded']) && count($_SESSION['_cf_uploaded'])) {
-                      foreach ($_SESSION['_cf_uploaded'] as $filedata) {
+                        foreach ($_SESSION['_cf_uploaded'] as $filedata) {
                             @unlink($filedata['path']);
                         }
                         unset($_SESSION['_cf_uploaded']);
@@ -288,24 +288,26 @@ class Class_cfFormMailer {
             }
 
             // 入力値の検証
-            if ($this->form[$field] || $_FILES[$field]['tmp_name'] || $this->form[$field]==='0') {
+            if (isset($this->form[$field]) || $_FILES[$field]['tmp_name'] || $this->form[$field]==='0') {
                 foreach ($methods as $indiv_m) {
                     $method_name = array();
                     preg_match("/^([^(]+)(\(([^)]*)\))?$/", $indiv_m, $method_name);
                     // 標準メソッドを処理
-                    $funcName = '_def_' . $method_name[1];
-                    if (is_callable(array($this, $funcName))) {
-                        $result = $this->$funcName($this->form[$field], $method_name[3], $field);
-                        if ($result !== true) {
-                            $this->setFormError($field, $this->adaptEncoding($method['label']), $result);
+                    if(isset($method_name[1]) && isset($method_name[3]) && isset($field)){
+                        $funcName = '_def_' . $method_name[1];
+                        if (is_callable(array($this, $funcName))) {
+                            $result = $this->$funcName($this->form[$field], $method_name[3], $field);
+                            if ($result !== true) {
+                                $this->setFormError($field, $this->adaptEncoding($method['label']), $result);
+                            }
                         }
-                    }
-                    // ユーザー追加メソッドを処理
-                    $funcName = '_validate_' . $method_name[1];
-                    if (is_callable($funcName)) {
-                        $result = $funcName($this->form[$field], $method_name[3]);
-                        if ($result !== true) {
-                            $this->setFormError($field, $this->adaptEncoding($method['label']), $this->adaptEncoding($result));
+                        // ユーザー追加メソッドを処理
+                        $funcName = '_validate_' . $method_name[1];
+                        if (is_callable($funcName)) {
+                            $result = $funcName($this->form[$field], $method_name[3]);
+                            if ($result !== true) {
+                                $this->setFormError($field, $this->adaptEncoding($method['label']), $this->adaptEncoding($result));
+                            }
                         }
                     }
                 }
@@ -347,21 +349,23 @@ class Class_cfFormMailer {
             // 復元処理しないタグ
             if ($fieldName === '_mode') continue;
 
-            switch($m_type[2]) {
-                // 復元処理しないタグ
-                case 'submit';
-                case 'image';
-                case 'file';
-                case 'button';
-                case 'reset';
-                case 'hidden';
-                    continue 2;
-                case 'checkbox';
-                case 'radio';
-                    $fieldType = $m_type[2];
-                    break;
-                default:
-                    $fieldType = 'text';
+            if(isset($m_type[2])){
+                switch($m_type[2]) {
+                    // 復元処理しないタグ
+                    case 'submit';
+                    case 'image';
+                    case 'file';
+                    case 'button';
+                    case 'reset';
+                    case 'hidden';
+                        continue 2;
+                    case 'checkbox';
+                    case 'radio';
+                        $fieldType = $m_type[2];
+                        break;
+                    default:
+                        $fieldType = 'text';
+                }
             }
 
             // テキストボックス
@@ -427,7 +431,7 @@ class Class_cfFormMailer {
             }
 
             // HTMLタグのみを置換
-            if ($rep && $pat) {
+            if (isset($rep) && $pat) {
                 $tag_new = str_replace($pat, $rep, $tag[0]);
             } else {
                 $tag_new = '';
@@ -685,7 +689,12 @@ class Class_cfFormMailer {
      * @return boolean 結果
      */
     public function isMultiple() {
-        return ($this->form === $_SESSION['_cffm_recently_send']);
+        if(isset($_SESSION['_cffm_recently_send'])){
+            $val_cffm_recently_send = $_SESSION['_cffm_recently_send'];
+            return ($this->form === $val_cffm_recently_send);
+        }
+        return false;
+        //return ($this->form === $_SESSION['_cffm_recently_send']);
     }
 
     /**
@@ -1024,10 +1033,13 @@ class Class_cfFormMailer {
                 $modifiers = false;
             }
 
-            if (!in_array($m[1], $replaceKeys)) continue;
+            if (!in_array($m[1], $replaceKeys)){
+              continue;
+            } 
 
-            $fType = $m[3];
-            $val = $params[$m[1]];
+            $fType = $m[3] ?? '';
+            $val = isset($m[1]) ? $params[$m[1]] : '';
+
             if($toFilter && $modifiers!==false) {
                 if($val==='&nbsp;') {
                     $val = '';
@@ -1193,7 +1205,14 @@ class Class_cfFormMailer {
 
             // 検証メソッドを取得
             if (preg_match("/valid=([\"'])(.+?)\\1/", $v[0], $v_match)) {
-                list($required, $method, $param) = explode(':', $v_match[2]);
+                if(isset($v_match[2])){
+                    //list($required, $method, $param) = explode(':', $v_match[2]);
+                    $v_match_temp = explode(':', $v_match[2]);
+
+                    $required = $v_match_temp[0] ?? '';
+                    $method = $v_match_temp[1] ?? '';
+                    $param = $v_match_temp[2] ?? '';
+                }
             } else {
                 $required = $method = $param = '';
             }
@@ -1958,10 +1977,8 @@ class Class_cfFormMailer {
      * @param $field
      * @return bool
      */
-    private function _def_convert($value, $param = 'K', $field) {
-        if (!$param) {
-            $param = 'K';
-        }
+    private function _def_convert($value, $param, $field) {
+        $param = $param ?: 'K';
         $this->form[$field] = mb_convert_kana(
             $this->form[$field]
             , $param
@@ -1979,7 +1996,8 @@ class Class_cfFormMailer {
      * @param $field
      * @return bool
      */
-    private function _def_zenhan($value, $param='VKas', $field) {
+    private function _def_zenhan($value, $param, $field) {
+        $param = $param ?: 'VKas';
         $this->form[$field] = mb_convert_kana(
             $this->form[$field]
             , $param
@@ -1998,7 +2016,8 @@ class Class_cfFormMailer {
      * @param $field
      * @return bool
      */
-    private function _def_hanzen($value, $param='VKAS', $field) {
+    private function _def_hanzen($value, $param, $field) {
+        $param = $param ?: 'VKAS';
         $this->form[$field] = mb_convert_kana(
             $this->form[$field]
             , $param
@@ -2068,53 +2087,53 @@ class Class_cfFormMailer {
         }
         // use date?
         if(strpos($param,'%') !== false){
-            $_str_to_date = [
-                '%A' => 'l',
-                '%B' => 'F',
-                '%D' => 'm/d/y',
-                '%F' => 'Y-m-d',
-                '%G' => 'o',
-                '%H' => 'H',
-                '%I' => 'h',
-                '%M' => 'i',
-                '%P' => 'a',
-                '%R' => 'H:i',
-                '%S' => 's',
-                '%T' => 'H:i:s',
-                '%V' => 'W',
-                '%W' => 'W',
-                '%X' => 'H:i:s',
-                '%Y' => 'Y',
-                '%Z' => 'e',
-                '%a' => 'D',
-                '%b' => 'M',
-                '%c' => 'c',
-                '%d' => 'd',
-                '%e' => 'j',
-                '%g' => 'y',
-                '%h' => 'M',
-                '%j' => 'z',
-                '%k' => 'G',
-                '%l' => 'g',
-                '%m' => 'm',
-                '%n' => ' ',
-                '%p' => 'A',
-                '%r' => 'h:i:s A',
-                '%s' => 'U',
-                '%t' => ' ',
-                '%u' => 'N',
-                '%v' => ' ',
-                '%w' => 'w',
-                '%x' => 'r',
-                '%y' => 'y',
-                '%z' => 'Z',
-            ];
-            $_strftime_format = array_keys($_str_to_date);
-            $_date_format = array_values($_str_to_date);
-            $param = str_replace($_strftime_format, $_date_format, $param);
-        }
-        return date($param, strtotime($text));
-    }
+          $_str_to_date = [
+              '%A' => 'l',
+              '%B' => 'F',
+              '%D' => 'm/d/y',
+              '%F' => 'Y-m-d',
+              '%G' => 'o',
+              '%H' => 'H',
+              '%I' => 'h',
+              '%M' => 'i',
+              '%P' => 'a',
+              '%R' => 'H:i',
+              '%S' => 's',
+              '%T' => 'H:i:s',
+              '%V' => 'W',
+              '%W' => 'W',
+              '%X' => 'H:i:s',
+              '%Y' => 'Y',
+              '%Z' => 'e',
+              '%a' => 'D',
+              '%b' => 'M',
+              '%c' => 'c',
+              '%d' => 'd',
+              '%e' => 'j',
+              '%g' => 'y',
+              '%h' => 'M',
+              '%j' => 'z',
+              '%k' => 'G',
+              '%l' => 'g',
+              '%m' => 'm',
+              '%n' => ' ',
+              '%p' => 'A',
+              '%r' => 'h:i:s A',
+              '%s' => 'U',
+              '%t' => ' ',
+              '%u' => 'N',
+              '%v' => ' ',
+              '%w' => 'w',
+              '%x' => 'r',
+              '%y' => 'y',
+              '%z' => 'Z',
+          ];
+          $_strftime_format = array_keys($_str_to_date);
+          $_date_format = array_values($_str_to_date);
+          $param = str_replace($_strftime_format, $_date_format, $param);
+      }
+      return date($param, strtotime($text));
+  }
 
     /**
      * sprintf(format) : テキストのフォーマット （※PHP関数 sprintf() と同様）
