@@ -261,11 +261,13 @@ class Class_cfFormMailer {
             if ($method['type'] !== 'textarea') {
                 // <textarea>タグ以外は改行を削除
                 if (is_array($this->form[$field])) {
-                    foreach ($this->form[$field] as $k=>&$v) {
+                    foreach (isset($this->form[$field]) && $this->form[$field] as $k=>&$v) {
                         $v = strtr($v, array("\r" => '', "\n" => ''));
                     }
                 } else {
-                    $this->form[$field] = strtr($this->form[$field], array("\r" => '', "\n" => ''));
+                    $this->form[$field] = isset($this->form[$field])
+                     ? strtr($this->form[$field], array("\r" => '', "\n" => ''))
+                     : null;
                 }
             }
             $methods = explode(',', $method['method']);
@@ -288,7 +290,7 @@ class Class_cfFormMailer {
             }
 
             // 入力値の検証
-            if (isset($this->form[$field]) || $_FILES[$field]['tmp_name'] || $this->form[$field]==='0') {
+            if (isset($this->form[$field]) || isset($_FILES[$field]['tmp_name'])) {
                 foreach ($methods as $indiv_m) {
                     $method_name = array();
                     preg_match("/^([^(]+)(\(([^)]*)\))?$/", $indiv_m, $method_name);
@@ -345,7 +347,7 @@ class Class_cfFormMailer {
             preg_match("/name=([\"'])(.+?)\\1/i", $tag[0], $m_name);
             preg_match("/value=([\"'])(.*?)\\1/i", $tag[0], $m_value);
 
-            $fieldName = str_replace('[]', '', $m_name[2]);
+            $fieldName = str_replace('[]', '', ($m_name[2] ?? ''));
             // 復元処理しないタグ
             if ($fieldName === '_mode') continue;
 
@@ -1045,7 +1047,6 @@ class Class_cfFormMailer {
                     $val = '';
                 }
                 $val = evo()->filter->phxFilter($m[1],$val,$modifiers);
-                if($val==='') $val = '&nbsp;';
             }
             $rep = '';
 
