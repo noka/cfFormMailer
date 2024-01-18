@@ -14,6 +14,28 @@ function _validate_postcode($data, $param) {
 }
 ---- */
 
+//isunique($target)で、$targetに指定した値と一致するものがDB内に既に登録されているかどうかチェック。
+//emailアドレスの重複登録排除などに。
+//cfFormDBとの連携を前提.
+function _validate_isunique($data, $target) {
+	global $modx;
+
+	//cfformDBと連携時のみ有効
+    if (!$this->cfg['use_store_db']) {
+      return true;
+    }
+	
+	$format = "SELECT value from %s where field = '%s' AND value = '%s'";
+	$sql = sprintf($format, evo()->getFullTableName($this->cfg['store_db_name'] . '_detail'), $target, $data);
+    $rs = db()->query($sql);
+	if(db()->getRecordCount($rs) > 0) {
+		return '既に登録されています';
+	}
+	
+	return true;
+	
+}
+
 
 
 

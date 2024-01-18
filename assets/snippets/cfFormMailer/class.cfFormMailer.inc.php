@@ -1685,7 +1685,7 @@ class Class_cfFormMailer {
             return;
         }
 
-        $sql = 'INSERT INTO ' . evo()->getFullTableName('cfformdb') . '(created) VALUES(NOW())';
+        $sql = 'INSERT INTO ' . evo()->getFullTableName($this->cfg['store_db_name']) . '(created) VALUES(NOW())';
         db()->query($sql);
         $newID = db()->getInsertId();
         $rank = 0;
@@ -1696,8 +1696,8 @@ class Class_cfFormMailer {
             if (is_array($val)) {
                 $val = join(',', $val);
             }
-            $sql = sprintf("INSERT INTO %s(postid,field,value,rank) VALUES(%d, '%s', '%s', %d)",
-                evo()->getFullTableName('cfformdb_detail'),
+            $sql = sprintf("INSERT INTO %s(postid,field,value,`rank`) VALUES(%d, '%s', '%s', %d)",
+                evo()->getFullTableName($this->cfg['store_db_name'] . '_detail'),
                 $newID,
                 db()->escape($key),
                 db()->escape($val),
@@ -1714,8 +1714,8 @@ class Class_cfFormMailer {
      */
     private function ifTableExists() {
         $sql = sprintf(
-            "SHOW TABLES FROM %s LIKE '%%cfformdb%%'"
-            , db()->config['dbase']
+            "SHOW TABLES FROM %s LIKE '%%%s%%'"
+            , db()->config['dbase'], $this->cfg['store_db_name'] ?? 'cfformdb'
         );
         return db()->getRecordCount(db()->query($sql)) == 2;
     }
