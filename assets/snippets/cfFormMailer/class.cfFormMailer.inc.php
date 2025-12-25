@@ -4,7 +4,7 @@
  *
  * @author  Clefarray Factory
  * @link  http://www.clefarray-web.net/
- * @version 1.6
+ * @version 1.6.1
  *
  * Documentation: http://www.clefarray-web.net/blog/manual/cfFormMailer_manual.html
  * LICENSE: GNU General Public License (GPL) (http://www.gnu.org/copyleft/gpl.html)
@@ -474,7 +474,7 @@ class Class_cfFormMailer {
         if ($this->cfg['mail_charset']) {
             $mailCharset = $this->cfg['mail_charset'];
         } else {
-            $mailCharset = 'iso-2022-jp';
+            $mailCharset = 'UTF-8'; // デフォルトは UTF-8
         }
 
         // 管理者メールアドレス特定
@@ -547,6 +547,17 @@ class Class_cfFormMailer {
         evo()->loadExtension('MODxMailer');
         $pm = &evo()->mail;
 
+
+        // PHPMailerに文字コードを伝える（共通）
+        $pm->CharSet = $mailCharset;
+        // エンコーディングの振り分け
+        if (strtolower($mailCharset) === 'iso-2022-jp') {
+             $pm->Encoding = '7bit';
+        } else {
+             // UTF-8の場合は base64 または 8bit を推奨
+             $pm->Encoding = 'base64'; 
+        }        // ユーザーからのファイル送信
+
         if($this->cfg['reply_ishtml']){
             $pm->isHTML(true);
         }else{
@@ -583,8 +594,6 @@ class Class_cfFormMailer {
         }
         $pm->Sender = $pm->From;
         $pm->Body = mb_convert_encoding($tmpl, $mailCharset, $this->cfg['charset']);
-        $pm->Encoding = '7bit';
-        // ユーザーからのファイル送信
         if (isset($_SESSION['_cf_uploaded']) && count($_SESSION['_cf_uploaded'])) {
             $upload_flag = true;
             foreach ($_SESSION['_cf_uploaded'] as $attach_file) {
@@ -621,7 +630,6 @@ class Class_cfFormMailer {
             );
             $pm->Sender = $pm->From;
             $pm->Body = mb_convert_encoding($tmpl_u, $mailCharset, $this->cfg['charset']);
-            $pm->Encoding = '7bit';
             // 添付ファイル処理
             if ($this->cfg['attach_file'] && is_file($this->cfg['attach_file'])) {
                 if ($this->cfg['attach_file_name']) {
